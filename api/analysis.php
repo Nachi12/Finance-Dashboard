@@ -27,20 +27,21 @@ try {
     ];
     $batchData = $sheets->getBatchSheetData($ranges);
 
-    // Helper: Map rows to associative array
-    function mapData($records) {
-        if (empty($records)) return [];
-        $headers = array_shift($records);
-        foreach ($headers as &$h) $h = strtolower(trim(str_replace(' ', '_', $h)));
-        $result = [];
-        foreach ($records as $row) {
-            $item = [];
-            foreach ($headers as $i => $key) {
-                $item[$key] = isset($row[$i]) ? $row[$i] : '';
+    if (!function_exists('mapData')) {
+        function mapData($records) {
+            if (empty($records)) return [];
+            $headers = array_shift($records);
+            foreach ($headers as &$h) $h = strtolower(trim(str_replace(' ', '_', $h)));
+            $result = [];
+            foreach ($records as $row) {
+                $item = [];
+                foreach ($headers as $i => $key) {
+                    $item[$key] = isset($row[$i]) ? $row[$i] : '';
+                }
+                $result[] = $item;
             }
-            $result[] = $item;
+            return $result;
         }
-        return $result;
     }
 
     $settingsData = mapData($batchData[0]);
@@ -255,24 +256,24 @@ try {
         ];
     }
 
-    // --- DEBT-FREE SIMULATOR ENGINE ---
-    function runSimulator($loans, $strategy, $extraPaymentMultiplier, $availableExtraCapacity) {
-        $simLoans = [];
-        foreach ($loans as $l) {
-            $simLoans[] = [
-                'id' => $l['loan_id'],
-                'name' => $l['loan_name'],
-                'balance' => $l['outstanding'],
-                'rate' => $l['interest_rate'],
-                'emi' => $l['emi']
-            ];
-        }
-        
-        $months = 0;
-        $totalInterest = 0;
-        $roadmap = [];
-        
-        $extraPaymentFixed = $availableExtraCapacity * $extraPaymentMultiplier;
+    if (!function_exists('runSimulator')) {
+        function runSimulator($loans, $strategy, $extraPaymentMultiplier, $availableExtraCapacity) {
+            $simLoans = [];
+            foreach ($loans as $l) {
+                $simLoans[] = [
+                    'id' => $l['loan_id'],
+                    'name' => $l['loan_name'],
+                    'balance' => $l['outstanding'],
+                    'rate' => $l['interest_rate'],
+                    'emi' => $l['emi']
+                ];
+            }
+            
+            $months = 0;
+            $totalInterest = 0;
+            $roadmap = [];
+            
+            $extraPaymentFixed = $availableExtraCapacity * $extraPaymentMultiplier;
 
         while (count($simLoans) > 0 && $months < 360) {
             $months++;
@@ -349,6 +350,7 @@ try {
             'total_interest' => $totalInterest,
             'roadmap' => $roadmap
         ];
+    }
     }
     
     $scenarios = [];

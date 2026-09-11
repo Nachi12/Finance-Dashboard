@@ -18,25 +18,26 @@ try {
     $filter_month = isset($_GET['month']) ? $_GET['month'] : date('m');
     $filter_year = isset($_GET['year']) ? $_GET['year'] : date('Y');
 
-    // Helper function to map sheet rows to associative arrays
-    function mapSheetData($records) {
-        if (empty($records)) return [];
-        $headers = array_shift($records);
-        
-        foreach ($headers as &$header) {
-            $header = strtolower(trim($header));
-            $header = str_replace(' ', '_', $header);
-        }
-        
-        $result = [];
-        foreach ($records as $row) {
-            $item = [];
-            foreach ($headers as $index => $key) {
-                $item[$key] = isset($row[$index]) ? $row[$index] : '';
+    if (!function_exists('mapSheetData')) {
+        function mapSheetData($records) {
+            if (empty($records)) return [];
+            $headers = array_shift($records);
+            
+            foreach ($headers as &$header) {
+                $header = strtolower(trim($header));
+                $header = str_replace(' ', '_', $header);
             }
-            $result[] = $item;
+            
+            $result = [];
+            foreach ($records as $row) {
+                $item = [];
+                foreach ($headers as $index => $key) {
+                    $item[$key] = isset($row[$index]) ? $row[$index] : '';
+                }
+                $result[] = $item;
+            }
+            return $result;
         }
-        return $result;
     }
 
     $ranges = [
