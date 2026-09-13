@@ -1,5 +1,8 @@
 {
   "name": "finance-dashboard",
   "version": "1.0.0",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "vercel-php-patch": "file:./vercel-php-patch"
+  }
 }

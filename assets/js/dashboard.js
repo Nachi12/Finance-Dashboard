@@ -82,18 +82,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (emiEl) emiEl.textContent = window.formatINR(summary.monthly_emi);
 
         const savingsEl = document.getElementById('kpi-savings');
-        if (savingsEl) {
-            savingsEl.textContent = window.formatINR(summary.monthly_savings);
-            if (summary.monthly_savings < 0) {
-                savingsEl.style.color = 'var(--danger-color)';
-            } else {
-                savingsEl.style.color = 'var(--success-color)';
-            }
-        }
+        if (savingsEl) savingsEl.textContent = window.formatINR(summary.monthly_savings);
         
         const savingsRateEl = document.getElementById('kpi-savings-rate');
         if (savingsRateEl) {
-            savingsRateEl.textContent = `Rate: ${summary.savings_rate !== 'N/A' ? summary.savings_rate + '%' : 'N/A'}`;
+            savingsRateEl.textContent = `${summary.savings_rate !== 'N/A' ? summary.savings_rate + '%' : '0%'}`;
         }
 
         const debtEl = document.getElementById('kpi-debt');
@@ -101,6 +94,102 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const netWorthEl = document.getElementById('kpi-net-worth');
         if (netWorthEl) netWorthEl.textContent = window.formatINR(summary.net_worth);
+        
+        // Calculate investments (Net Worth + Debt)
+        const invEl = document.getElementById('kpi-investments');
+        const investments = parseFloat(summary.net_worth || 0) + parseFloat(summary.total_debt || 0);
+        if (invEl) invEl.textContent = window.formatINR(investments);
+        
+        // Dynamic sentence
+        const sentenceEl = document.getElementById('dynamic-summary-sentence');
+        if (sentenceEl) {
+            const left = parseFloat(summary.monthly_savings || 0);
+            sentenceEl.innerHTML = `Your family recorded <strong>${window.formatINR(summary.monthly_income)}</strong> income and <strong>${window.formatINR(summary.monthly_expenses)}</strong> expenses this month, leaving <strong style="color: ${left >= 0 ? 'var(--success-color)' : 'var(--danger-color)'}">${window.formatINR(left)}</strong> after current commitments.`;
+        }
+
+        // Fetch previous month to compare
+        fetchPreviousMonthData(summary, investments);
+    }
+
+    async function fetchPreviousMonthData(currentSummary, currentInvestments) {
+        const filterMember = document.getElementById('filter-member');
+        const filterMonth = document.getElementById('filter-month');
+        const filterYear = document.getElementById('filter-year');
+        
+        const member_id = filterMember ? filterMember.value : 'ALL';
+        let month = parseInt(filterMonth ? filterMonth.value : '09', 10);
+        let year = parseInt(filterYear ? filterYear.value : '2026', 10);
+        
+        month -= 1;
+        if (month === 0) {
+            month = 12;
+            year -= 1;
+        }
+        const prevMonthStr = month.toString().padStart(2, '0');
+        
+        try {
+            const result = await window.apiFetch(`dashboard.php?member_id=${member_id}&month=${prevMonthStr}&year=${year}`);
+            if (result && result.success && result.data && result.data.summary) {
+                const prev = result.data.summary;
+                const prevInvestments = parseFloat(prev.net_worth || 0) + parseFloat(prev.total_debt || 0);
+                
+                renderTrend('trend-income', currentSummary.monthly_income, prev.monthly_income, true);
+                renderTrend('trend-expenses', currentSummary.monthly_expenses, prev.monthly_expenses, false);
+                renderTrend('trend-emi', currentSummary.monthly_emi, prev.monthly_emi, false);
+                renderTrend('trend-savings', currentSummary.monthly_savings, prev.monthly_savings, true);
+                
+                renderTrend('trend-debt', currentSummary.total_debt, prev.total_debt, false);
+                renderTrend('trend-net-worth', currentSummary.net_worth, prev.net_worth, true);
+                renderTrend('trend-investments', currentInvestments, prevInvestments, true);
+                renderTrend('trend-savings-rate', parseFloat(currentSummary.savings_rate), parseFloat(prev.savings_rate), true);
+            } else {
+                setAllTrendsNeutral("No prior data");
+            }
+        } catch(e) {
+            setAllTrendsNeutral("Comparison failed");
+        }
+    }
+    
+    function renderTrend(elementId, current, previous, higherIsBetter) {
+        const el = document.getElementById(elementId);
+        if (!el) return;
+        
+        current = parseFloat(current) || 0;
+        previous = parseFloat(previous) || 0;
+        
+        if (previous === 0 && current === 0) {
+            el.textContent = "No change";
+            el.className = "kpi-trend neutral";
+            return;
+        }
+        
+        if (previous === 0) {
+            el.textContent = "New this month";
+            el.className = `kpi-trend ${higherIsBetter ? 'positive' : 'negative'}`;
+            return;
+        }
+        
+        const diff = current - previous;
+        const percent = (Math.abs(diff) / Math.abs(previous)) * 100;
+        const percentStr = percent.toFixed(1) + '%';
+        
+        if (diff === 0) {
+            el.textContent = "No change";
+            el.className = "kpi-trend neutral";
+        } else if (diff > 0) {
+            el.textContent = `▲ ${percentStr} from last month`;
+            el.className = `kpi-trend ${higherIsBetter ? 'positive' : 'negative'}`;
+        } else {
+            el.textContent = `▼ ${percentStr} from last month`;
+            el.className = `kpi-trend ${higherIsBetter ? 'negative' : 'positive'}`;
+        }
+    }
+    
+    function setAllTrendsNeutral(msg) {
+        document.querySelectorAll('.kpi-trend').forEach(el => {
+            el.textContent = msg;
+            el.className = 'kpi-trend neutral';
+        });
     }
 
     function initCharts(data) {
@@ -205,14 +294,14 @@ document.addEventListener('DOMContentLoaded', function() {
             else if (item.type === 'Expense' || item.type === 'Withdrawal') amountColor = 'color: var(--danger-color);';
             
             tr.innerHTML = `
-                <td style="padding: 10px;">${item.date}</td>
-                <td style="padding: 10px;">
+                <td data-label="Date" style="padding: 10px;">${item.date}</td>
+                <td data-label="Type" style="padding: 10px;">
                     <span class="badge" style="background: var(--light-bg); padding: 4px 8px; border-radius: 12px; font-size: 0.85em;">
                         ${item.type}
                     </span>
                 </td>
-                <td style="padding: 10px;">${item.description || '-'}</td>
-                <td style="padding: 10px; font-weight: bold; ${amountColor}">
+                <td data-label="Description" style="padding: 10px;">${item.description || '-'}</td>
+                <td data-label="Amount" style="padding: 10px; font-weight: bold; ${amountColor}">
                     ${window.formatINR(Math.abs(item.amount))}
                 </td>
             `;

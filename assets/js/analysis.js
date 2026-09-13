@@ -78,73 +78,90 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderAnalysisDashboard(data) {
         const { snapshot, ratios, debt, recommendations } = data;
 
-        // 1. Snapshot
-        document.getElementById('df-kpi-income').textContent = window.formatINR(snapshot.income);
-        document.getElementById('df-kpi-essential').textContent = window.formatINR(snapshot.essential_expenses);
-        document.getElementById('df-kpi-discretionary').textContent = window.formatINR(snapshot.discretionary_expenses);
-        document.getElementById('df-kpi-fcf').textContent = window.formatINR(snapshot.free_cash_flow);
+        // 1. Debt-Free Core KPIs
+        let totalDebt = 0;
+        let totalEMI = 0;
+        debt.active_loans.forEach(l => {
+            totalDebt += parseFloat(l.outstanding_principal || 0);
+            totalEMI += parseFloat(l.emi_amount || 0);
+        });
 
-        // 2. Ratios
-        const sr = document.getElementById('df-savings-rate');
-        const srStatus = document.getElementById('df-savings-status');
-        sr.textContent = ratios.savings_rate.toFixed(1) + '%';
-        if (ratios.savings_rate >= 20) { sr.style.color = 'var(--success-color)'; srStatus.textContent = 'Excellent'; }
-        else if (ratios.savings_rate >= 10) { sr.style.color = 'var(--warning-color)'; srStatus.textContent = 'Healthy'; }
-        else { sr.style.color = 'var(--danger-color)'; srStatus.textContent = 'Needs Improvement'; }
+        const elCurrentDebt = document.getElementById('df-current-debt');
+        if (elCurrentDebt) elCurrentDebt.textContent = window.formatINR(totalDebt);
+        
+        const elMonthlyEmi = document.getElementById('df-monthly-emi');
+        if (elMonthlyEmi) elMonthlyEmi.textContent = window.formatINR(totalEMI);
+        
+        const elExtraCapacity = document.getElementById('df-extra-capacity-main');
+        if (elExtraCapacity) elExtraCapacity.textContent = window.formatINR(debt.extra_capacity);
+        
+        const sim = data.simulator;
+        let balancedScenario = (sim && sim.scenarios) ? (sim.scenarios.find(s => s.name === 'Balanced') || sim.scenarios[0]) : null;
+        
+        const elPotentialSaving = document.getElementById('df-potential-saving');
+        const elFreedomDate = document.getElementById('df-freedom-date');
+        const elStatusText = document.getElementById('df-status-text');
 
-        const er = document.getElementById('df-emi-ratio');
-        const erStatus = document.getElementById('df-emi-status');
-        er.textContent = ratios.emi_ratio.toFixed(1) + '%';
-        if (ratios.emi_ratio <= 30) { er.style.color = 'var(--success-color)'; erStatus.textContent = 'Healthy Burden'; }
-        else if (ratios.emi_ratio <= 40) { er.style.color = 'var(--warning-color)'; erStatus.textContent = 'Moderate Burden'; }
-        else { er.style.color = 'var(--danger-color)'; erStatus.textContent = 'High Burden'; }
+        if (totalDebt <= 0) {
+            if (elPotentialSaving) elPotentialSaving.textContent = '₹0';
+            if (elFreedomDate) elFreedomDate.textContent = 'Debt Free! 🎉';
+            if (elStatusText) elStatusText.textContent = 'Completed 🏆';
+        } else if (balancedScenario) {
+            if (elPotentialSaving) elPotentialSaving.textContent = window.formatINR(balancedScenario.saved);
+            
+            let freedomDate = new Date();
+            freedomDate.setMonth(freedomDate.getMonth() + balancedScenario.months);
+            if (elFreedomDate) elFreedomDate.textContent = freedomDate.toLocaleString('default', { month: 'short', year: 'numeric' });
+            
+            if (elStatusText) elStatusText.textContent = balancedScenario.months <= 12 ? 'Excellent 🎯' : (balancedScenario.months <= 36 ? 'On Track 🏃‍♂️' : 'Requires Focus 🧗‍♀️');
+        } else {
+            if (elPotentialSaving) elPotentialSaving.textContent = '-';
+            if (elFreedomDate) elFreedomDate.textContent = '-';
+            if (elStatusText) elStatusText.textContent = 'Analyzing...';
+        }
 
-        const efp = document.getElementById('df-emergency-progress');
-        const efpStatus = document.getElementById('df-emergency-status');
-        efp.textContent = ratios.emergency_fund_progress.toFixed(1) + '%';
-        if (ratios.emergency_fund_progress >= 100) { efp.style.color = 'var(--success-color)'; }
-        else if (ratios.emergency_fund_progress >= 50) { efp.style.color = 'var(--warning-color)'; }
-        else { efp.style.color = 'var(--danger-color)'; }
-        efpStatus.textContent = `Target: ${window.formatINR(ratios.emergency_fund_target)}`;
+        // 2. Strategy
+        const elStrategyLabel = document.getElementById('df-strategy-label');
+        if (elStrategyLabel) elStrategyLabel.textContent = debt.strategy.charAt(0).toUpperCase() + debt.strategy.slice(1);
+        
+        const explanationMap = {
+            'avalanche': 'This strategy minimizes the total interest paid by targeting your highest interest rate debts first.',
+            'snowball': 'This strategy builds momentum by targeting your smallest debts first for quick wins.'
+        };
+        const elStrategyExplanation = document.getElementById('df-strategy-explanation');
+        if (elStrategyExplanation) elStrategyExplanation.textContent = explanationMap[debt.strategy] || explanationMap['avalanche'];
 
         // 3. Recommendations
         const recContainer = document.getElementById('recommendations-container');
-        recContainer.innerHTML = '';
-        if (recommendations.length === 0) {
-            recContainer.innerHTML = '<div style="padding: 15px; background: var(--light-bg); border-radius: 8px;">No critical recommendations at this time. Keep up the good work!</div>';
-        } else {
-            recommendations.forEach(r => {
-                let borderCol = 'var(--primary-color)';
-                let icon = '💡';
-                if (r.priority === 'HIGH') { borderCol = 'var(--danger-color)'; icon = '🚨'; }
-                else if (r.priority === 'MEDIUM') { borderCol = 'var(--warning-color)'; icon = '⚠️'; }
+        if (recContainer) {
+            recContainer.innerHTML = '';
+            if (recommendations.length === 0) {
+                recContainer.innerHTML = '<div style="padding: 15px; background: var(--light-bg); border-radius: 8px;">No critical recommendations at this time. Keep up the good work!</div>';
+            } else {
+                const topRecs = recommendations.slice(0, 3);
+                topRecs.forEach(r => {
+                    let borderCol = 'var(--primary-color)';
+                    let icon = '💡';
+                    if (r.priority === 'HIGH') { borderCol = 'var(--danger-color)'; icon = '🚨'; }
+                    else if (r.priority === 'MEDIUM') { borderCol = 'var(--warning-color)'; icon = '⚠️'; }
 
-                const div = document.createElement('div');
-                div.style.padding = '15px';
-                div.style.background = 'var(--light-bg)';
-                div.style.borderLeft = `4px solid ${borderCol}`;
-                div.style.borderRadius = '4px';
-                div.innerHTML = `
-                    <h5 style="margin: 0 0 5px 0;">${icon} ${r.issue}</h5>
-                    <p style="margin: 0 0 5px 0; font-size: 0.9em;"><strong>Evidence:</strong> ${r.evidence}</p>
-                    <p style="margin: 0 0 5px 0; font-size: 0.9em;"><strong>Impact:</strong> ${r.impact}</p>
-                    <p style="margin: 0; font-size: 0.9em; color: ${borderCol};"><strong>Suggested Action:</strong> ${r.action}</p>
-                `;
-                recContainer.appendChild(div);
-            });
+                    const div = document.createElement('div');
+                    div.style.padding = '15px';
+                    div.style.background = 'var(--light-bg)';
+                    div.style.borderLeft = `4px solid ${borderCol}`;
+                    div.style.borderRadius = '4px';
+                    div.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px;">
+                            <h5 style="margin: 0;">${icon} ${r.issue}</h5>
+                            <span style="font-size: 0.75em; padding: 2px 8px; border-radius: 12px; border: 1px solid ${borderCol}; color: ${borderCol}; font-weight: bold;">${r.priority} PRIORITY</span>
+                        </div>
+                        <p style="margin: 0 0 5px 0; font-size: 0.9em;"><strong>Suggested Action:</strong> ${r.action}</p>
+                        <p style="margin: 0; font-size: 0.9em; color: var(--success-color);"><strong>Potential Impact:</strong> ${r.impact}</p>
+                    `;
+                    recContainer.appendChild(div);
+                });
+            }
         }
-
-        // 4. Simulator Scenarios & Roadmap
-        const sim = data.simulator;
-        
-        document.getElementById('df-strategy-label').textContent = debt.strategy.charAt(0).toUpperCase() + debt.strategy.slice(1);
-        document.getElementById('df-extra-capacity').textContent = window.formatINR(debt.extra_capacity);
-        
-        // Find highest interest rate for investment comparison
-        let highestRate = 0;
-        debt.active_loans.forEach(l => { if (l.interest_rate > highestRate) highestRate = l.interest_rate; });
-        const hrSpan = document.getElementById('df-highest-debt-rate');
-        if (hrSpan) hrSpan.textContent = highestRate;
 
         // Render Scenarios
         const scenBody = document.getElementById('df-scenariosBody');

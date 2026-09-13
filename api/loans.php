@@ -76,6 +76,88 @@ try {
         }
         
         echo json_encode(['success' => true, 'data' => $result]);
+    } else if ($method === 'PUT') {
+        $data = json_decode(file_get_contents('php://input'), true);
+        if (!$data || empty($data['id'])) {
+            throw new Exception("Invalid JSON input or missing loan ID");
+        }
+
+        $id = $data['id'];
+        $rowIndex = $sheets->findRowIndexById('LOANS!A:A', $id);
+        
+        if ($rowIndex === false) {
+            throw new Exception("Loan not found");
+        }
+
+        // Fetch existing row to preserve history
+        $existingRows = $sheets->getSheetData('LOANS!A' . ($rowIndex + 1) . ':S' . ($rowIndex + 1));
+        if (empty($existingRows)) {
+            throw new Exception("Could not fetch existing loan data");
+        }
+        $existingRow = $existingRows[0];
+        
+        $totalPaid = isset($existingRow[11]) ? (float)$existingRow[11] : 0;
+        $principalPaid = isset($existingRow[12]) ? (float)$existingRow[12] : 0;
+        $interestPaid = isset($existingRow[13]) ? (float)$existingRow[13] : 0;
+        
+        // Recalculate outstanding principal based on new principal amount
+        $newPrincipalAmount = isset($data['principal_amount']) ? (float)$data['principal_amount'] : (float)$existingRow[5];
+        $outstandingPrincipal = $newPrincipalAmount - $principalPaid;
+        
+        $status = isset($data['status']) ? $data['status'] : (isset($existingRow[16]) ? $existingRow[16] : 'Active');
+
+        // Prepare row data matching the LOANS schema
+        $row = [
+            $id,
+            isset($data['family_member_id']) ? $data['family_member_id'] : $existingRow[1],
+            isset($data['loan_name']) ? $data['loan_name'] : $existingRow[2],
+            isset($data['lender']) ? $data['lender'] : $existingRow[3],
+            isset($data['loan_type']) ? $data['loan_type'] : $existingRow[4],
+            $newPrincipalAmount,
+            isset($data['interest_rate']) ? $data['interest_rate'] : $existingRow[6],
+            isset($data['interest_type']) ? $data['interest_type'] : $existingRow[7],
+            isset($data['tenure_months']) ? $data['tenure_months'] : $existingRow[8],
+            isset($data['start_date']) ? $data['start_date'] : $existingRow[9],
+            isset($data['emi_amount']) ? $data['emi_amount'] : $existingRow[10],
+            $totalPaid,
+            $principalPaid,
+            $interestPaid,
+            $outstandingPrincipal,
+            isset($data['next_emi_date']) ? $data['next_emi_date'] : $existingRow[15],
+            $status,
+            isset($data['balance_calculation_method']) ? $data['balance_calculation_method'] : $existingRow[17],
+            isset($data['notes']) ? $data['notes'] : (isset($existingRow[18]) ? $existingRow[18] : '')
+        ];
+
+        $sheets->updateRow('LOANS!A' . ($rowIndex + 1) . ':S' . ($rowIndex + 1), $row);
+        
+        echo json_encode(['success' => true, 'message' => 'Loan updated successfully']);
+    } else if ($method === 'DELETE') {
+        $data = json_decode(file_get_contents('php://input'), true);
+        
+        // Sometimes DELETE requests might send data in URL parameters instead
+        $id = isset($data['id']) ? $data['id'] : (isset($_GET['id']) ? $_GET['id'] : null);
+        
+        if (!$id) {
+            throw new Exception("Missing loan ID");
+        }
+
+        $rowIndex = $sheets->findRowIndexById('LOANS!A:A', $id);
+        
+        if ($rowIndex === false) {
+            throw new Exception("Loan not found");
+        }
+
+        // We need the sheet ID for the LOANS sheet to use the batchUpdate deleteRow method
+        $metadata = $sheets->getSheetMetadata();
+        if (!isset($metadata['LOANS'])) {
+            throw new Exception("LOANS sheet not found in metadata");
+        }
+        
+        $sheetId = $metadata['LOANS'];
+        $sheets->deleteRow($sheetId, $rowIndex);
+        
+        echo json_encode(['success' => true, 'message' => 'Loan deleted successfully']);
     } else {
         http_response_code(405);
         echo json_encode(['success' => false, 'error' => 'Method not allowed']);

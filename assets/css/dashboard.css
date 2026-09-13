@@ -3,6 +3,9 @@
     display: flex;
     min-height: 100vh;
     background: linear-gradient(135deg, hsl(220, 20%, 98%), hsl(220, 30%, 95%));
+    width: 100%;
+    max-width: 1440px;
+    margin: 0 auto;
 }
 
 /* Sidebar */
@@ -105,8 +108,11 @@
 
 /* Dashboard Body */
 .dashboard-body {
-    padding: 2.5rem;
+    padding: clamp(12px, 2vw, 32px);
     flex: 1;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
 }
 
 .page-header {
@@ -119,9 +125,11 @@
 }
 
 .page-header h1 {
-    font-size: 2rem;
+    font-size: clamp(24px, 6vw, 42px);
     color: var(--text-primary);
     margin-bottom: 0.2rem;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .page-header > div:last-child {
@@ -133,9 +141,10 @@
 /* KPI Cards Grid */
 .kpi-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1.5rem;
     margin-bottom: 2.5rem;
+    width: 100%;
 }
 
 .kpi-card {
@@ -147,6 +156,9 @@
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     position: relative;
     overflow: hidden;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 .kpi-card::before {
@@ -178,11 +190,13 @@
 }
 
 .kpi-card-value {
-    font-size: 2rem;
+    font-size: clamp(1.4rem, 4vw, 2rem);
     font-weight: 700;
     color: var(--text-primary);
     margin-bottom: 0.5rem;
     line-height: 1.2;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .kpi-card-trend {
@@ -194,8 +208,15 @@
 }
 
 /* Tables */
+.table-container {
+    width: 100%;
+    max-width: 100%;
+    
+}
+
 .table {
     width: 100%;
+    max-width: 100%;
     border-collapse: separate;
     border-spacing: 0;
 }
@@ -234,4 +255,482 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.025em;
+}
+
+/* Bottom Navigation (Hidden on Desktop) */
+.bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+    z-index: 50;
+    padding-bottom: env(safe-area-inset-bottom);
+    border-top: 1px solid var(--border-color);
+}
+
+.bottom-nav a {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 0;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    text-decoration: none;
+}
+
+.bottom-nav a.active {
+    color: var(--primary-color);
+}
+
+.bottom-nav .nav-icon {
+    font-size: 1.4rem;
+    margin-bottom: 2px;
+}
+
+/* Mobile More List */
+.mobile-more-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.mobile-more-list li a {
+    display: block;
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    text-decoration: none;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    body {
+        padding-bottom: calc(70px + env(safe-area-inset-bottom));
+    }
+    .sidebar {
+        display: none !important;
+    }
+    .bottom-nav {
+        display: flex;
+    }
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+    }
+    .topbar {
+        padding: 0 1rem;
+        height: 60px;
+    }
+    .dashboard-header-block {
+        padding: 15px !important;
+        gap: 10px !important;
+    }
+    .dashboard-filters {
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        
+        padding-bottom: 5px;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+    }
+    .dashboard-filters > div {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+    .quick-actions {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px !important;
+        padding: 10px !important;
+    }
+    .quick-actions .btn {
+        min-width: 0 !important;
+        padding: 15px 10px !important;
+        font-size: 0.85rem !important;
+    }
+    .kpi-grid, .primary-kpi-grid, .secondary-kpi-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+    }
+    .kpi-card-value {
+        font-size: 1.4rem !important;
+    }
+    .kpi-card-title {
+        font-size: 0.75rem !important;
+    }
+    .table {
+        display: block;
+        width: 100%;
+        
+        -webkit-overflow-scrolling: touch;
+        
+    }
+    .table.table-cards-mobile {
+        white-space: normal;
+        border: none;
+    }
+    .table.table-cards-mobile thead {
+        display: none;
+    }
+    .table.table-cards-mobile tbody,
+    .table.table-cards-mobile tr,
+    .table.table-cards-mobile td {
+        display: block;
+        width: 100%;
+    }
+    .table.table-cards-mobile tr {
+        margin-bottom: 15px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 10px;
+        background: white;
+    }
+    .table.table-cards-mobile td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 5px;
+        border-bottom: 1px solid var(--bg-main);
+        text-align: right;
+    }
+    .table.table-cards-mobile td:last-child {
+        border-bottom: none;
+    }
+    .table.table-cards-mobile td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: var(--text-secondary);
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        text-align: left;
+        margin-right: 15px;
+    }
+    .modal-content.bottom-sheet {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        border-radius: 24px 24px 0 0;
+        transform: translateY(100%);
+        max-height: 85vh;
+    }
+    .modal-overlay.active .modal-content.bottom-sheet {
+        transform: translateY(0);
+    }
+}
+
+.chart-container {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+}
+
+img, svg {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Additional Responsive Fixes */
+.responsive-grid {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+.responsive-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+@media (max-width: 768px) {
+    .responsive-grid {
+        grid-template-columns: 1fr;
+    }
+    .responsive-topbar {
+        height: auto;
+        padding: 10px;
+    }
+    .responsive-topbar .search-box {
+        order: 3;
+        width: 100%;
+    }
+    .responsive-topbar .search-input {
+        width: 100% !important;
+        max-width: 100%;
+    }
+    .responsive-topbar .mobile-title {
+        display: inline !important;
+    }
+    .responsive-topbar .desktop-month {
+        display: none;
+    }
+    .responsive-topbar .topbar-right {
+        order: 2;
+    }
+    .responsive-topbar .topbar-left {
+        order: 1;
+    }
+}
+
+
+/* Super small devices (phones) */
+@media (max-width: 480px) {
+    * {
+        min-width: 0;
+    }
+    .chart-container, .table-container, .table-wrapper {
+        width: 100%;
+        max-width: 100vw;
+    }
+
+    .dashboard-filters {
+        flex-direction: column !important;
+    }
+    .dashboard-filters > div, .dashboard-filters select, .dashboard-filters button {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    .quick-actions {
+        grid-template-columns: 1fr !important;
+    }
+    .kpi-grid, .primary-kpi-grid, .secondary-kpi-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .page-header {
+        flex-direction: column;
+    }
+    .table.table-cards-mobile td {
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+    }
+    .table.table-cards-mobile td::before {
+        margin-bottom: 5px;
+    }
+}
+
+/* Mobile Loan Card Specific Refinements */
+@media (max-width: 768px) {
+    .table.table-cards-mobile tr.loan-row {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas: 
+            "loan status"
+            "outstanding outstanding"
+            "emi due"
+            "progress progress"
+            "member member"
+            "actions actions";
+        gap: 8px;
+        padding: 15px !important;
+        margin-bottom: 12px;
+    }
+    .table.table-cards-mobile tr.loan-row td {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        text-align: left !important;
+        border-bottom: none !important;
+        padding: 0 !important;
+        min-width: 0 !important;
+        width: 100% !important;
+    }
+    .table.table-cards-mobile tr.loan-row td::before {
+        content: attr(data-label) !important;
+        color: var(--text-muted);
+        font-size: 0.75rem;
+        text-transform: capitalize;
+        margin-bottom: 2px;
+        font-weight: 500;
+    }
+    
+    /* Specific areas */
+    .table.table-cards-mobile tr.loan-row td:nth-child(1) { grid-area: loan; }
+    .table.table-cards-mobile tr.loan-row td:nth-child(1)::before { display: none !important; }
+    
+    .table.table-cards-mobile tr.loan-row td:nth-child(7) { grid-area: status; align-items: flex-end !important; }
+    .table.table-cards-mobile tr.loan-row td:nth-child(7)::before { display: none !important; }
+    
+    .table.table-cards-mobile tr.loan-row td.loan-outstanding-td { grid-area: outstanding; margin: 5px 0 10px 0; }
+    .table.table-cards-mobile tr.loan-row td.loan-outstanding-td::before { font-size: 0.85rem; }
+    .table.table-cards-mobile tr.loan-row td.loan-outstanding-td { font-size: 1.4rem; }
+    
+    .table.table-cards-mobile tr.loan-row td:nth-child(4) { grid-area: emi; }
+    .table.table-cards-mobile tr.loan-row td:nth-child(5) { grid-area: due; }
+    .table.table-cards-mobile tr.loan-row td:nth-child(6) { grid-area: progress; margin-top: 5px; }
+    
+    .table.table-cards-mobile tr.loan-row td:nth-child(2) { 
+        grid-area: member; 
+        flex-direction: row !important; 
+        align-items: center !important;
+        gap: 5px; 
+        margin-top: 10px;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 100%;
+    }
+    .table.table-cards-mobile tr.loan-row td:nth-child(2)::before { content: 'Member:' !important; margin-bottom: 0; }
+    
+    .table.table-cards-mobile tr.loan-row td.loan-actions-td { 
+        grid-area: actions; 
+        flex-direction: row !important; 
+        justify-content: space-between !important; 
+        gap: 10px; 
+        margin-top: 15px; 
+        width: 100%;
+    }
+    .table.table-cards-mobile tr.loan-row td.loan-actions-td::before { display: none !important; }
+    
+    .table.table-cards-mobile tr.loan-row td.loan-actions-td button { 
+        flex: 1; 
+        margin: 0 !important; 
+        min-height: 44px; 
+        font-size: 0.9rem !important;
+        padding: 8px !important;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .table.table-cards-mobile tr.loan-row td.loan-actions-td .btn-delete-loan { display: none; }
+}
+
+@media (max-width: 360px) {
+    .table.table-cards-mobile tr.loan-row {
+        grid-template-columns: 1fr;
+        grid-template-areas: 
+            "loan"
+            "status"
+            "outstanding"
+            "emi"
+            "due"
+            "progress"
+            "member"
+            "actions";
+    }
+    .table.table-cards-mobile tr.loan-row td:nth-child(7) { align-items: flex-start !important; margin-bottom: 10px; }
+    .table.table-cards-mobile tr.loan-row td.loan-actions-td { flex-direction: column !important; }
+}
+
+.sidebar-nav a .nav-icon {
+    width: 24px;
+    min-width: 24px;
+    text-align: center;
+    font-size: 1.1rem;
+}
+.sidebar-nav a .nav-label {
+    flex: 1;
+    min-width: 0;
+}
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    backdrop-filter: blur(2px);
+}
+.sidebar-overlay.active {
+    display: block;
+}
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Tablet Responsive */
+@media (max-width: 1024px) and (min-width: 768px) {
+    .sidebar {
+        width: 80px;
+        transition: width 0.3s ease;
+        overflow-x: hidden;
+    }
+    .main-content {
+        margin-left: 80px;
+    }
+    .sidebar-header h2 {
+        display: none !important;
+    }
+    .sidebar-nav a .nav-label {
+        display: none !important;
+    }
+    .sidebar.open {
+        width: 240px;
+        z-index: 1001;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+    }
+    .sidebar.open .sidebar-header h2 {
+        display: block !important;
+    }
+    .sidebar.open .sidebar-nav a .nav-label {
+        display: block !important;
+    }
+    .sidebar:hover {
+        width: 240px;
+        z-index: 1001;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+    }
+    .sidebar:hover .sidebar-header h2 {
+        display: block !important;
+    }
+    .sidebar:hover .sidebar-nav a .nav-label {
+        display: block !important;
+    }
+
+}
+
+/* Mobile Drawer Responsive */
+@media (max-width: 767px) {
+    .sidebar {
+        display: flex !important; /* override old none */
+        position: fixed;
+        left: -100%;
+        top: 0;
+        width: min(85vw, 320px);
+        height: 100vh;
+        z-index: 2000;
+        transition: left 0.3s ease;
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+        box-shadow: 2px 0 15px rgba(0,0,0,0.3);
+    }
+    .sidebar.open {
+        left: 0;
+    }
+    .main-content {
+        margin-left: 0 !important;
+    }
+    .desktop-sidebar-title {
+        display: none !important;
+    }
+    .mobile-sidebar-title {
+        display: block !important;
+        font-size: 1.4rem;
+        margin: 0;
+    }
+    .sidebar-close-btn {
+        display: flex !important;
+        width: 44px;
+        height: 44px;
+        align-items: center;
+        justify-content: center;
+    }
+    li.mobile-only {
+        display: block !important;
+    }
 }
