@@ -1,7 +1,7 @@
 {
   "functions": {
     "router.php": {
-      "runtime": "vercel-php-patch"
+      "runtime": "vercel-php-patch@0.9.0"
     }
   },
   "routes": [
